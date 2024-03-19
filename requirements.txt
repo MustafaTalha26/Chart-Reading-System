@@ -1,0 +1,8 @@
+opencv-python==4.9.0.80
+matplotlib
+numpy
+easyocr==1.7.1
+tensorflow==2.15.0
+tensorboard==2.15.2
+keras==2.15.0
+scikit-learn
