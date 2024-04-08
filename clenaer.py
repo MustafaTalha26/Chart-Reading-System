@@ -5,13 +5,17 @@ import os
 
 reader = easyocr.Reader(['en'])
 
-def load_images_from_folder(folder,dest):
+def load_images_from_folder(folder,dest,amount):
     image_paths = []
+    count = 0
     for filename in os.listdir(folder):
         save = dest + filename
         read = folder + filename
         image_paths.append(filename)
         cv2.imwrite(save,clean_image(read))
+        count = count + 1
+        if count == amount:
+            break
     return image_paths
 
 def clean_image(image_path):
@@ -34,7 +38,7 @@ def clean_image(image_path):
 
     pixel_count = len(image) * len(image[0])
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     thresh = cv2.threshold(gray, 254, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_BINARY)[1]
 
     erosion_kernel = np.ones((2, 2), np.uint8) 
@@ -55,11 +59,10 @@ def clean_image(image_path):
             x,y,w,h = cv2.boundingRect(c)
             if w*h < pixel_count/4:
                 cv2.rectangle(image, (x, y), (x + w, y + h), (255,255,255), -1)
+    
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    image = cv2.threshold(image, 254, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_BINARY)[1]
     return image
 
-
-
-
-
-
+load_images_from_folder('rawdata/Line/','LineTest/Line/',100)
 

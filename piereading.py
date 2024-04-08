@@ -5,8 +5,7 @@ import math
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('data/Pie/1156.png')
-image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+image = cv2.imread('rawdata/Pie/66.png')
 
 #Scale the image
 scale_percent = 100 # percent of original size
@@ -31,7 +30,7 @@ cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
 #Object detection
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 thresh = cv2.threshold(gray, 254, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_BINARY)[1]
 
 erosion_kernel = np.ones((3, 3), np.uint8) 
@@ -76,7 +75,7 @@ for box in box_list:
             cti = textbox
     pairs.append([box,cti,0,0])
 
-gray = cv2.cvtColor(copyimg, cv2.COLOR_BGR2GRAY)
+gray = cv2.cvtColor(copyimg, cv2.COLOR_RGB2GRAY)
 for pair in pairs:
     hist,bins = np.histogram(gray[(pair[0][1]):(pair[0][1]+pair[0][3]), (pair[0][0]):(pair[0][0]+pair[0][2])].ravel(),256,[0,256])
     plist = []
@@ -91,7 +90,7 @@ for pair in pairs:
         pair[2] = plist[255]
     print(pair)
 
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 copy = cv2.resize(gray, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)

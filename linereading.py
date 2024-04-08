@@ -5,11 +5,15 @@ import easyocr
 from collections import Counter 
 from skimage.transform import (hough_line, hough_line_peaks)
 import DBSCAN
+import Kmeans
+import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('data/Line/99968.png')
+image = cv2.imread('rawdata/Line/99968.png')
 
+
+# Necessary Functions
 def checkfloat(string):
     try:
         string = float(string)
@@ -29,6 +33,7 @@ def mode(nlist):
     mode = [k for k, v in get_mode.items() if v == max(list(data.values()))]
     return mode 
 
+# A function for easyocr
 def correctgroups(result):
     correctresults = []
     for x in result:
@@ -115,6 +120,7 @@ def correctgroups(result):
     
     return numbergroups,lettergroups
 
+# Image information
 scale_percent = 200 # percent of original size
 width = int(image.shape[1] * scale_percent / 100)
 height = int(image.shape[0] * scale_percent / 100)
@@ -131,7 +137,6 @@ for text in result:
     y2 = int(text[0][2][1])
     cv2.rectangle(image, (x1, y1), (x2, y2), (255,255,255), -1)
 
-#düzelt
 ngroups,lgroups = correctgroups(result)
 firstng = ngroups[0]
 secondng = ngroups[1]
@@ -142,21 +147,23 @@ for group in ngroups:
     elif len(group) < len(firstng) and len(group) > len(secondng):
         secondng = group
     
-if len(ngroups) == 2:
-    xmid = []
-    ymid = []
-    for x in firstng:
-        xmid.append(float(x[1]))
-    for x in secondng:
-        ymid.append(float(x[1]))
-    xmid = medyan(xmid)
-    ymid = medyan(ymid)
 
-# düzelt
+xmid = []
+ymid = []
+for x in firstng:
+    xmid.append(float(x[1]))
+for x in secondng:
+    ymid.append(float(x[1]))
+xmid = medyan(xmid)
+ymid = medyan(ymid)
+print(xmid)
+print(ymid)
+
 longlg = lgroups[0]
 for group in lgroups:
     if len(longlg) < len(group):
-        longlg = group     
+        longlg = group  
+   
 colorboxes = []
 for word in longlg:
     squ = abs(word[0][3][1]-word[0][0][1])
@@ -199,11 +206,8 @@ for c in cnts:
     area = cv2.contourArea(c)
     if area > 200 and area < 15000:
         x,y,w,h = cv2.boundingRect(c)
-
         if w*h < contourthresh:
             cv2.rectangle(image, (x, y), (x + w, y + h), (255,255,255), -1)
-        if w*h > contourthresh:
-            print("Cords of big contour: ",x,y,x+w,y+h)
 
 copy = cv2.resize(image, (600, 400))
 cv2.imshow('Resized_Window', copy)
@@ -236,8 +240,6 @@ for _,y,z in linesdata:
     elif abs(1.570 - y) < lineanglethresh and z > xaxis[1]:
         xaxis[0] = y
         xaxis[1] = z
-print(xaxis)
-print(yaxis)
 
 if xaxis[1] != 0 and yaxis[1] != 100000:
     cutimg = image[0:int(xaxis[1])-3, int(yaxis[1])+3:len(image[1])]
@@ -245,53 +247,53 @@ if xaxis[1] != 0 and yaxis[1] != 100000:
     cv2.imshow('Resized_Window', copy)
     cv2.waitKey(0)
 
-#angle_list=[]  
-#fig, axes = plt.subplots(1, 3)
-#ax = axes.ravel()
-#
-#ax[0].imshow(hough , cmap='gray')
-#ax[0].set_title('Input image')
-#ax[0].set_axis_off()
-#
-#ax[1].imshow(np.log(1 + hspace),
-#             extent=[np.rad2deg(theta[-1]), np.rad2deg(theta[0]), dist[-1], dist[0]],
-#             cmap='gray', aspect=1/1.5)
-#ax[1].set_title('Hough transform')
-#ax[1].set_xlabel('Angles (degrees)')
-#ax[1].set_ylabel('Distance (pixels)')
-#ax[1].axis('image')
-#ax[2].imshow(hough, cmap='gray')
-#origin = np.array((0, hough.shape[1]))
-#for _, angle, dist in zip(*hough_line_peaks(hspace, theta, dist)):
-#    angle_list.append(angle) 
-#    y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
-#    ax[2].plot(origin, (y0, y1), '-r')
-#ax[2].set_xlim(origin)
-#ax[2].set_ylim((hough.shape[0], 0))
-#ax[2].set_axis_off()
-#ax[2].set_title('Detected lines')
-#
-#origin = np.array((0, hough.shape[1]))
-#dist = xaxis[1]
-#angle = xaxis[0]
-#y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
-#ax[2].plot(origin, (y0, y1), '-b')
-#
-#dist = yaxis[1]
-#angle = yaxis[0]
-#y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
-#ax[2].plot(origin, (y0, y1), '-b')
-#
-#plt.tight_layout()
-#plt.show()
+angle_list=[]  
+fig, axes = plt.subplots(1, 3)
+ax = axes.ravel()
+
+ax[0].imshow(hough , cmap='gray')
+ax[0].set_title('Input image')
+ax[0].set_axis_off()
+
+ax[1].imshow(np.log(1 + hspace),
+             extent=[np.rad2deg(theta[-1]), np.rad2deg(theta[0]), dist[-1], dist[0]],
+             cmap='gray', aspect=1/1.5)
+ax[1].set_title('Hough transform')
+ax[1].set_xlabel('Angles (degrees)')
+ax[1].set_ylabel('Distance (pixels)')
+ax[1].axis('image')
+ax[2].imshow(hough, cmap='gray')
+origin = np.array((0, hough.shape[1]))
+for _, angle, dist in zip(*hough_line_peaks(hspace, theta, dist)):
+    angle_list.append(angle) 
+    y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+    ax[2].plot(origin, (y0, y1), '-r')
+ax[2].set_xlim(origin)
+ax[2].set_ylim((hough.shape[0], 0))
+ax[2].set_axis_off()
+ax[2].set_title('Detected lines')
+
+origin = np.array((0, hough.shape[1]))
+dist = xaxis[1]
+angle = xaxis[0]
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+ax[2].plot(origin, (y0, y1), '-b')
+
+dist = yaxis[1]
+angle = yaxis[0]
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+ax[2].plot(origin, (y0, y1), '-b')
+
+plt.tight_layout()
+plt.show()
 
 accur = []
 clump = []
 clumps = []
 clumpflag = 0
-dots = 30
-for column in range(dots):
-    pillar = int(len(cutimg[0])/dots) * column
+frequency = 30
+for column in range(frequency):
+    pillar = int(len(cutimg[0])/frequency) * column
     for x in range(len(cutimg[:,pillar])):
         if True != (cutimg[:,pillar][x][0] == 255 and cutimg[:,pillar][x][1] == 255 and cutimg[:,pillar][x][2] == 255) :
             clump.append([x,[cutimg[:,pillar][x][0],cutimg[:,pillar][x][1],cutimg[:,pillar][x][2]],pillar])
@@ -302,8 +304,6 @@ for column in range(dots):
             clump = []
     accur.append(clumps)
     clumps = []
-
-print(len(cutimg[0]), len(cutimg))
 
 columns = []
 for clumps in accur:
@@ -324,34 +324,37 @@ for clumps in accur:
         column.append(groupsum)
     columns.append(column)
 
-points = []
 data = []
 for x in colorboxes:
     RG = x[1][0] - x[1][1]
     GB = x[1][1] - x[1][2]
     RB = x[1][0] - x[1][2]
-    print([RG,GB,RB])
     data.append([RG,GB,RB])
 
+points = []
 for column in columns:
     for point in column:
         points.append(point)
         data.append(point[3])
         cutimg[point[0],point[1]] = [0,0,0]
 
-predictions = DBSCAN.dbscanT(data,5)
+kgroups = len(longlg)+1
+colorNameAndGruop = []
+predictions = Kmeans.kmeansT(data,kgroups)
 for x in range(len(colorboxes)):
-    print(predictions[x])
+    colorNameAndGruop.append([colorboxes[x][0][1],predictions[x]])
 for x in range(len(points)):
     points[x][4] = predictions[x+len(colorboxes)]
 
 for column in columns:
     print('New Column: ')
     for point in column:
-        #if True != (point[3][0] == 0 and point[3][1] == 0 and point[3][2] == 0) and point[4] != -1:
         print('Data Points: ', point)
 
 copy = cv2.resize(cutimg, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
+#with open('output.csv', 'w') as file:
+#    csv_writer = csv.writer(file)
+#    csv_writer.writerows(points)
