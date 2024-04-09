@@ -9,7 +9,7 @@ import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/99850.png')
+image = cv2.imread('rawdata/Line/99688.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -135,6 +135,7 @@ pixel_count = len(image) * len(image[0])
 
 result = reader.readtext(image)
 for text in result:
+    print(text)
     x1 = int(text[0][0][0])
     x2 = int(text[0][2][0])
     y1 = int(text[0][0][1]) 
@@ -150,7 +151,16 @@ for group in ngroups:
         firstng = group
     elif len(group) < len(firstng) and len(group) > len(secondng):
         secondng = group
-    
+
+topcorner = 0
+rightcorner = 100000
+mixed = firstng + secondng
+for x in mixed:
+    if x[0][1][0] > topcorner:
+        topcorner = x[0][1][0]
+    if x[0][1][1] < rightcorner:
+        rightcorner = x[0][1][1]
+
 xmid = []
 ymid = []
 for x in firstng:
@@ -159,10 +169,7 @@ for x in secondng:
     ymid.append(float(x[1]))
 xmid = medyan(xmid)
 ymid = medyan(ymid)
-print(xmid)
-print(ymid)
 
-print(len(lgroups))
 longlg = lgroups[0]
 for group in lgroups:
     if len(longlg) < len(group):
@@ -249,12 +256,14 @@ for _,y,z in linesdata:
         xaxis[1] = z
 
 if xaxis[1] != 0 and yaxis[1] != 100000:
-    cutimg = image[0:int(xaxis[1])-3, int(yaxis[1])+3:len(image[1])]
+    cutimg = image[rightcorner:int(xaxis[1])-3, int(yaxis[1])+3:topcorner]
     erosion_kernel = np.ones((5, 15), np.uint8) 
     cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
     cv2.imshow('Resized_Window', copy)
     cv2.waitKey(0)
+else:
+    print("X and Y axis can not be found")
 
 accur = []
 clump = []
