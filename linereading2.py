@@ -4,13 +4,12 @@ import matplotlib.pyplot as plt
 import easyocr
 from collections import Counter 
 from skimage.transform import (hough_line, hough_line_peaks)
-import DBSCAN
 import Kmeans
 import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/99968.png')
+image = cv2.imread('rawdata/Line/99850.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -34,6 +33,7 @@ def mode(nlist):
 
 # A function for easyocr
 def correctgroups(result):
+    thresh = 5
     correctresults = []
     for x in result:
         if x[2] > 0.40:
@@ -46,7 +46,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][0][0]-other[0][0][0]) < 10:
+            if chosen != other and abs(chosen[0][0][0]-other[0][0][0]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -57,7 +57,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][0][1]-other[0][0][1]) < 10:            
+            if chosen != other and abs(chosen[0][0][1]-other[0][0][1]) < thresh:            
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -68,7 +68,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][2][0]-other[0][2][0]) < 10:
+            if chosen != other and abs(chosen[0][2][0]-other[0][2][0]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -79,7 +79,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][2][1]-other[0][2][1]) < 10:
+            if chosen != other and abs(chosen[0][2][1]-other[0][2][1]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -96,6 +96,11 @@ def correctgroups(result):
         if flag == 0:
             finegroups.append(group)
     groups = finegroups
+
+    for group in groups:
+        print("Group: ")
+        for x in group:
+            print(x)
 
     numbergroups = []
     flag = 0
@@ -157,6 +162,7 @@ ymid = medyan(ymid)
 print(xmid)
 print(ymid)
 
+print(len(lgroups))
 longlg = lgroups[0]
 for group in lgroups:
     if len(longlg) < len(group):
@@ -165,7 +171,10 @@ for group in lgroups:
 colorboxes = []
 for word in longlg:
     squ = abs(word[0][3][1]-word[0][0][1])
-    colorbox = image[word[0][0][1]:word[0][2][1],word[0][0][0]-int((15*squ)/10):word[0][2][0]-int((15*squ)/10)]
+    colorbox = image[word[0][0][1]:word[0][2][1],word[0][0][0]-int((15*squ)/10):word[0][2][0]-int((15*squ)/10)].copy()
+    cv2.rectangle(image, (word[0][0][0]-int((15*squ)/10), word[0][0][1]), (word[0][2][0]-int((15*squ)/10), word[0][2][1]), (255,255,255), -1)
+    erosion_kernel = np.ones((5, 15), np.uint8) 
+    colorbox = cv2.erode(colorbox, erosion_kernel)
     sumcolorred = 0
     sumcolorgreen = 0
     sumcolorblue = 0
@@ -241,6 +250,8 @@ for _,y,z in linesdata:
 
 if xaxis[1] != 0 and yaxis[1] != 100000:
     cutimg = image[0:int(xaxis[1])-3, int(yaxis[1])+3:len(image[1])]
+    erosion_kernel = np.ones((5, 15), np.uint8) 
+    cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
     cv2.imshow('Resized_Window', copy)
     cv2.waitKey(0)
@@ -291,21 +302,31 @@ for column in columns:
         cutimg[point[0],point[1]] = [0,0,0]
 
 kgroups = len(longlg)+1
-colorNameAndGruop = []
+colorNameAndGroup = []
 predictions = Kmeans.kmeansT(data,kgroups)
 for x in range(len(colorboxes)):
-    colorNameAndGruop.append([colorboxes[x][0][1],predictions[x]])
+    colorNameAndGroup.append([colorboxes[x][0][1],predictions[x]])
 for x in range(len(points)):
     points[x][3] = predictions[x+len(colorboxes)]
+
 
 for column in columns:
     print('New Column: ')
     for point in column:
-        print('Data Points: ', point)
+        for x in colorNameAndGroup:
+            if point[3] == x[1]:
+                print('Data Points: ', point)
+
+for x in colorNameAndGroup:
+    print(x)        
 
 copy = cv2.resize(cutimg, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
+
+
+
+
 
 #with open('output.csv', 'w') as file:
 #    csv_writer = csv.writer(file)
