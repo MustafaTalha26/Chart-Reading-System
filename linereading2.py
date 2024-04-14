@@ -135,7 +135,6 @@ pixel_count = len(image) * len(image[0])
 
 result = reader.readtext(image)
 for text in result:
-    print(text)
     x1 = int(text[0][0][0])
     x2 = int(text[0][2][0])
     y1 = int(text[0][0][1]) 
@@ -230,7 +229,7 @@ cv2.waitKey(0)
 gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 thresh = cv2.threshold(gray, 254, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_BINARY)[1]
 
-erosion_kernel = np.ones((2, 2), np.uint8) 
+erosion_kernel = np.ones((3, 3), np.uint8) 
 eroded = cv2.erode(thresh, erosion_kernel)
 
 close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4,4))
@@ -239,24 +238,29 @@ close = cv2.morphologyEx(eroded, cv2.MORPH_CLOSE, close_kernel, iterations=1)
 dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
 hough = cv2.dilate(close, dilate_kernel, iterations=1)
 
-tested_angles = np.linspace(-np.pi / 2, np.pi / 2, 180)
-hspace, theta, dist = hough_line(hough , tested_angles)
+copy = cv2.resize(hough, (600, 400))
+cv2.imshow('Resized_Window', copy)
+cv2.waitKey(0)
+
+tested_angles = np.linspace(-np.pi / 2, (np.pi / 2), 180)
+hspace, theta, dist = hough_line(hough)
 h, q, d = hough_line_peaks(hspace, theta, dist)
 linesdata = zip(h,q,d)
 
-lineanglethresh = 0.2
-xaxis = [0,0]
-yaxis = [1.6, 100000]
+lineanglethresh = 0.1
+xaxis = [1.570,0]
+yaxis = [0.008,0]
 for _,y,z in linesdata:
-    if abs(0.008 - y) < lineanglethresh and z < yaxis[1]:
-        yaxis[0] = y
-        yaxis[1] = z
-    elif abs(1.570 - y) < lineanglethresh and z > xaxis[1]:
+    print(y,z)
+    if abs(abs(1.570) - abs(y)) < lineanglethresh and z < xaxis[1]:
         xaxis[0] = y
         xaxis[1] = z
+    if abs(abs(0.008) - abs(y)) < lineanglethresh and z > yaxis[1]:
+        yaxis[0] = y
+        yaxis[1] = z
 
-if xaxis[1] != 0 and yaxis[1] != 100000:
-    cutimg = image[rightcorner:int(xaxis[1])-3, int(yaxis[1])+3:topcorner]
+if xaxis[1] != 0 and yaxis[1] != 0:
+    cutimg = image[rightcorner:int(abs(xaxis[1]))-5, int(yaxis[1])+3:topcorner]
     erosion_kernel = np.ones((5, 15), np.uint8) 
     cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
@@ -264,6 +268,47 @@ if xaxis[1] != 0 and yaxis[1] != 100000:
     cv2.waitKey(0)
 else:
     print("X and Y axis can not be found")
+    exit()
+
+angle_list=[]  
+fig, axes = plt.subplots(1, 3)
+ax = axes.ravel()
+
+ax[0].imshow(hough , cmap='gray')
+ax[0].set_title('Input image')
+ax[0].set_axis_off()
+
+ax[1].imshow(np.log(1 + hspace),
+             extent=[np.rad2deg(theta[-1]), np.rad2deg(theta[0]), dist[-1], dist[0]],
+             cmap='gray', aspect=1/1.5)
+ax[1].set_title('Hough transform')
+ax[1].set_xlabel('Angles (degrees)')
+ax[1].set_ylabel('Distance (pixels)')
+ax[1].axis('image')
+ax[2].imshow(hough, cmap='gray')
+origin = np.array((0, hough.shape[1]))
+for _, angle, dist in zip(*hough_line_peaks(hspace, theta, dist)):
+    angle_list.append(angle) 
+    y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+    ax[2].plot(origin, (y0, y1), '-r')
+ax[2].set_xlim(origin)
+ax[2].set_ylim((hough.shape[0], 0))
+ax[2].set_axis_off()
+ax[2].set_title('Detected lines')
+
+origin = np.array((0, hough.shape[1]))
+dist = xaxis[1]
+angle = xaxis[0]
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+ax[2].plot(origin, (y0, y1), '-b')
+
+dist = yaxis[1]
+angle = yaxis[0]
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+ax[2].plot(origin, (y0, y1), '-b')
+
+plt.tight_layout()
+plt.show()
 
 accur = []
 clump = []
