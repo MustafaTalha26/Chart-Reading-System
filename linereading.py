@@ -4,14 +4,12 @@ import matplotlib.pyplot as plt
 import easyocr
 from collections import Counter 
 from skimage.transform import (hough_line, hough_line_peaks)
-import DBSCAN
 import Kmeans
 import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/99968.png')
-
+image = cv2.imread('rawdata/Line/99688.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -35,6 +33,7 @@ def mode(nlist):
 
 # A function for easyocr
 def correctgroups(result):
+    thresh = 5
     correctresults = []
     for x in result:
         if x[2] > 0.40:
@@ -47,7 +46,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][0][0]-other[0][0][0]) < 10:
+            if chosen != other and abs(chosen[0][0][0]-other[0][0][0]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -58,7 +57,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][0][1]-other[0][0][1]) < 10:            
+            if chosen != other and abs(chosen[0][0][1]-other[0][0][1]) < thresh:            
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -69,7 +68,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][2][0]-other[0][2][0]) < 10:
+            if chosen != other and abs(chosen[0][2][0]-other[0][2][0]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -80,7 +79,7 @@ def correctgroups(result):
         group = []
         group.append(chosen)
         for other in result:
-            if chosen != other and abs(chosen[0][2][1]-other[0][2][1]) < 10:
+            if chosen != other and abs(chosen[0][2][1]-other[0][2][1]) < thresh:
                 group.append(other)
         group.sort()
         if group not in groups and len(group) > 1:
@@ -97,6 +96,11 @@ def correctgroups(result):
         if flag == 0:
             finegroups.append(group)
     groups = finegroups
+
+    for group in groups:
+        print("Group: ")
+        for x in group:
+            print(x)
 
     numbergroups = []
     flag = 0
@@ -146,7 +150,15 @@ for group in ngroups:
         firstng = group
     elif len(group) < len(firstng) and len(group) > len(secondng):
         secondng = group
-    
+
+topcorner = 0
+rightcorner = 100000
+mixed = firstng + secondng
+for x in mixed:
+    if x[0][1][0] > topcorner:
+        topcorner = x[0][1][0]
+    if x[0][1][1] < rightcorner:
+        rightcorner = x[0][1][1]
 
 xmid = []
 ymid = []
@@ -156,8 +168,6 @@ for x in secondng:
     ymid.append(float(x[1]))
 xmid = medyan(xmid)
 ymid = medyan(ymid)
-print(xmid)
-print(ymid)
 
 longlg = lgroups[0]
 for group in lgroups:
@@ -167,7 +177,10 @@ for group in lgroups:
 colorboxes = []
 for word in longlg:
     squ = abs(word[0][3][1]-word[0][0][1])
-    colorbox = image[word[0][0][1]:word[0][2][1],word[0][0][0]-int((15*squ)/10):word[0][2][0]-int((15*squ)/10)]
+    colorbox = image[word[0][0][1]:word[0][2][1],word[0][0][0]-int((15*squ)/10):word[0][2][0]-int((15*squ)/10)].copy()
+    cv2.rectangle(image, (word[0][0][0]-int((15*squ)/10), word[0][0][1]), (word[0][2][0]-int((15*squ)/10), word[0][2][1]), (255,255,255), -1)
+    erosion_kernel = np.ones((5, 15), np.uint8) 
+    colorbox = cv2.erode(colorbox, erosion_kernel)
     sumcolorred = 0
     sumcolorgreen = 0
     sumcolorblue = 0
@@ -216,7 +229,7 @@ cv2.waitKey(0)
 gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 thresh = cv2.threshold(gray, 254, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_BINARY)[1]
 
-erosion_kernel = np.ones((2, 2), np.uint8) 
+erosion_kernel = np.ones((3, 3), np.uint8) 
 eroded = cv2.erode(thresh, erosion_kernel)
 
 close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4,4))
@@ -225,27 +238,37 @@ close = cv2.morphologyEx(eroded, cv2.MORPH_CLOSE, close_kernel, iterations=1)
 dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
 hough = cv2.dilate(close, dilate_kernel, iterations=1)
 
-tested_angles = np.linspace(-np.pi / 2, np.pi / 2, 180)
-hspace, theta, dist = hough_line(hough , tested_angles)
+copy = cv2.resize(hough, (600, 400))
+cv2.imshow('Resized_Window', copy)
+cv2.waitKey(0)
+
+tested_angles = np.linspace(-np.pi / 2, (np.pi / 2), 180)
+hspace, theta, dist = hough_line(hough)
 h, q, d = hough_line_peaks(hspace, theta, dist)
 linesdata = zip(h,q,d)
 
-lineanglethresh = 0.2
-xaxis = [0,0]
-yaxis = [1.6, 100000]
+lineanglethresh = 0.1
+xaxis = [1.570,0]
+yaxis = [0.008,0]
 for _,y,z in linesdata:
-    if abs(0.008 - y) < lineanglethresh and z < yaxis[1]:
-        yaxis[0] = y
-        yaxis[1] = z
-    elif abs(1.570 - y) < lineanglethresh and z > xaxis[1]:
+    print(y,z)
+    if abs(abs(1.570) - abs(y)) < lineanglethresh and z < xaxis[1]:
         xaxis[0] = y
         xaxis[1] = z
+    if abs(abs(0.008) - abs(y)) < lineanglethresh and z > yaxis[1]:
+        yaxis[0] = y
+        yaxis[1] = z
 
-if xaxis[1] != 0 and yaxis[1] != 100000:
-    cutimg = image[0:int(xaxis[1])-3, int(yaxis[1])+3:len(image[1])]
+if xaxis[1] != 0 and yaxis[1] != 0:
+    cutimg = image[rightcorner:int(abs(xaxis[1]))-5, int(yaxis[1])+3:topcorner]
+    erosion_kernel = np.ones((5, 15), np.uint8) 
+    cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
     cv2.imshow('Resized_Window', copy)
     cv2.waitKey(0)
+else:
+    print("X and Y axis can not be found")
+    exit()
 
 angle_list=[]  
 fig, axes = plt.subplots(1, 3)
@@ -317,43 +340,47 @@ for clumps in accur:
             sumclump[1] = sumclump[1] + pixel[1][1]
             sumclump[2] = sumclump[2] + pixel[1][2]
             ycords = ycords + pixel[0]
-        RG = int(sumclump[0]/lenclump) - int(sumclump[1]/lenclump)
-        GB = int(sumclump[1]/lenclump) - int(sumclump[2]/lenclump)
-        RB = int(sumclump[0]/lenclump) - int(sumclump[2]/lenclump)
-        groupsum = [int(ycords/lenclump),pixel[2],[int(sumclump[0]/lenclump),int(sumclump[1]/lenclump),int(sumclump[2]/lenclump)],[RG,GB,RB],-1]
+        groupsum = [int(ycords/lenclump),pixel[2],[int(sumclump[0]/lenclump),int(sumclump[1]/lenclump),int(sumclump[2]/lenclump)],-1]
         column.append(groupsum)
     columns.append(column)
 
 data = []
 for x in colorboxes:
-    RG = x[1][0] - x[1][1]
-    GB = x[1][1] - x[1][2]
-    RB = x[1][0] - x[1][2]
-    data.append([RG,GB,RB])
+    data.append([x[1][0],x[1][1],x[1][2]])
 
 points = []
 for column in columns:
     for point in column:
         points.append(point)
-        data.append(point[3])
+        data.append(point[2])
         cutimg[point[0],point[1]] = [0,0,0]
 
 kgroups = len(longlg)+1
-colorNameAndGruop = []
+colorNameAndGroup = []
 predictions = Kmeans.kmeansT(data,kgroups)
 for x in range(len(colorboxes)):
-    colorNameAndGruop.append([colorboxes[x][0][1],predictions[x]])
+    colorNameAndGroup.append([colorboxes[x][0][1],predictions[x]])
 for x in range(len(points)):
-    points[x][4] = predictions[x+len(colorboxes)]
+    points[x][3] = predictions[x+len(colorboxes)]
+
 
 for column in columns:
     print('New Column: ')
     for point in column:
-        print('Data Points: ', point)
+        for x in colorNameAndGroup:
+            if point[3] == x[1]:
+                print('Data Points: ', point)
+
+for x in colorNameAndGroup:
+    print(x)        
 
 copy = cv2.resize(cutimg, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
+
+
+
+
 
 #with open('output.csv', 'w') as file:
 #    csv_writer = csv.writer(file)
