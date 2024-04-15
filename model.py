@@ -48,7 +48,7 @@ test = keras.utils.image_dataset_from_directory(
     batch_size=32,
     label_mode='categorical'
 )
-
+callback = keras.callbacks.EarlyStopping(monitor='loss', patience=3)
 epochs= 5
 
 model.compile(
@@ -60,6 +60,7 @@ history = model.fit(
     train,
     epochs=epochs,
     validation_data=valid,
+    callbacks=[callback]
 )
 
 predictions = np.array([])

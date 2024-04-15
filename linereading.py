@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -96,11 +97,6 @@ def correctgroups(result):
         if flag == 0:
             finegroups.append(group)
     groups = finegroups
-
-    for group in groups:
-        print("Group: ")
-        for x in group:
-            print(x)
 
     numbergroups = []
     flag = 0
@@ -242,7 +238,25 @@ copy = cv2.resize(hough, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
-tested_angles = np.linspace(-np.pi / 2, (np.pi / 2), 180)
+lines = cv2.HoughLines(hough, 1, np.pi / 180, 500, None)
+print(lines)
+
+if lines is not None:
+    for i in range(0, len(lines)):
+        rho = lines[i][0][0]
+        theta = lines[i][0][1]
+        a = math.cos(theta)
+        b = math.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+        pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+        cv2.line(hough, pt1, pt2, (255,255,255), 3, cv2.LINE_AA)
+
+copy = cv2.resize(hough, (600, 400))
+cv2.imshow('Resized_Window', copy)
+cv2.waitKey(0)   
+
 hspace, theta, dist = hough_line(hough)
 h, q, d = hough_line_peaks(hspace, theta, dist)
 linesdata = zip(h,q,d)
@@ -251,7 +265,6 @@ lineanglethresh = 0.1
 xaxis = [1.570,0]
 yaxis = [0.008,0]
 for _,y,z in linesdata:
-    print(y,z)
     if abs(abs(1.570) - abs(y)) < lineanglethresh and z < xaxis[1]:
         xaxis[0] = y
         xaxis[1] = z
