@@ -49,10 +49,10 @@ test = keras.utils.image_dataset_from_directory(
     label_mode='categorical'
 )
 callback = keras.callbacks.EarlyStopping(monitor='loss', patience=3)
-epochs= 5
+epochs= 10
 
 model.compile(
-    optimizer='Adam',
+    optimizer=keras.optimizers.Adam(1e-6),
     loss="categorical_crossentropy",
     metrics=["accuracy"],
 )
