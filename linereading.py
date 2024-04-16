@@ -10,7 +10,7 @@ import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/99688.png')
+image = cv2.imread('rawdata/Line/98975.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -34,10 +34,10 @@ def mode(nlist):
 
 # A function for easyocr
 def correctgroups(result):
-    thresh = 5
+    thresh = 7
     correctresults = []
     for x in result:
-        if x[2] > 0.40:
+        if x[2] > 0.30:
             correctresults.append(x)
     result = correctresults
 
@@ -265,6 +265,7 @@ lineanglethresh = 0.1
 xaxis = [1.570,0]
 yaxis = [0.008,0]
 for _,y,z in linesdata:
+    print(y,z)
     if abs(abs(1.570) - abs(y)) < lineanglethresh and z < xaxis[1]:
         xaxis[0] = y
         xaxis[1] = z
@@ -302,7 +303,7 @@ ax[2].imshow(hough, cmap='gray')
 origin = np.array((0, hough.shape[1]))
 for _, angle, dist in zip(*hough_line_peaks(hspace, theta, dist)):
     angle_list.append(angle) 
-    y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+    y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle+0.008)
     ax[2].plot(origin, (y0, y1), '-r')
 ax[2].set_xlim(origin)
 ax[2].set_ylim((hough.shape[0], 0))
@@ -312,12 +313,12 @@ ax[2].set_title('Detected lines')
 origin = np.array((0, hough.shape[1]))
 dist = xaxis[1]
 angle = xaxis[0]
-y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle+0.008)
 ax[2].plot(origin, (y0, y1), '-b')
 
 dist = yaxis[1]
 angle = yaxis[0]
-y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
+y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle+0.008)
 ax[2].plot(origin, (y0, y1), '-b')
 
 plt.tight_layout()
