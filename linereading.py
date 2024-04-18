@@ -10,7 +10,7 @@ import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/98975.png')
+image = cv2.imread('rawdata/Line/98990.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -20,21 +20,28 @@ def checkfloat(string):
     except ValueError:
         return False
 
-def medyan(nlist):
-    nlist.sort()
-    mid = len(nlist) // 2
-    res = (nlist[mid] + nlist[~mid]) / 2
-    return res
+def sort_by_indexes(lst, indexes, reverse=False):
+    return [val for (_, val) in sorted(zip(indexes, lst), key=lambda x: \
+            x[0], reverse=reverse)]
 
-def mode(nlist):
-    data = Counter(nlist) 
-    get_mode = dict(data) 
-    mode = [k for k, v in get_mode.items() if v == max(list(data.values()))]
-    return mode 
+def medyanVer(nlist):
+    mid = len(nlist) // 2
+    if len(nlist) % 2 == 1:
+        res = (float(nlist[mid][1]) - float(nlist[mid-1][1])) / (nlist[mid-1][0][0][1] - nlist[mid][0][0][1])
+    if len(nlist) % 2 == 0:
+        res = (float(nlist[mid][1]) - float(nlist[~mid][1])) / (nlist[~mid][0][0][1] - nlist[mid][0][0][1])
+    return res
+def medyanHor(nlist):
+    mid = len(nlist) // 2
+    if len(nlist) % 2 == 1:
+        res = (float(nlist[mid][1]) - float(nlist[mid-1][1])) / (nlist[mid][0][0][0] - nlist[mid-1][0][0][0])
+    if len(nlist) % 2 == 0:
+        res = (float(nlist[mid][1]) - float(nlist[~mid][1])) / (nlist[mid][0][0][0] - nlist[~mid][0][0][0])
+    return res
 
 # A function for easyocr
 def correctgroups(result):
-    thresh = 7
+    thresh = 5
     correctresults = []
     for x in result:
         if x[2] > 0.30:
@@ -138,6 +145,9 @@ for text in result:
     cv2.rectangle(image, (x1, y1), (x2, y2), (255,255,255), -1)
 
 ngroups,lgroups = correctgroups(result)
+if len(ngroups) < 2:
+    print("Number groups not sufficent")
+    exit()
 firstng = ngroups[0]
 secondng = ngroups[1]
 for group in ngroups:
@@ -146,6 +156,36 @@ for group in ngroups:
         firstng = group
     elif len(group) < len(firstng) and len(group) > len(secondng):
         secondng = group
+
+firstsorted = []
+for x in firstng:
+    firstsorted.append(x)
+firstsorted = sort_by_indexes(firstng,firstsorted,True)
+
+secondsorted = []
+for x in secondng:
+    secondsorted.append(x)
+secondsorted = sort_by_indexes(secondng,secondsorted,True)
+
+x_scale = 0
+y_scale = 0
+
+if abs(firstng[0][0][0][0] - firstng[1][0][0][0]) < 7 or abs(firstng[0][0][2][0] - firstng[1][0][2][0]) < 7:
+    if abs(secondng[0][0][0][1] - secondng[1][0][0][1]) < 7 or abs(secondng[0][0][2][1] - secondng[1][0][2][1]) < 7:
+        x_scale = medyanHor(secondsorted)
+        y_scale = medyanVer(firstsorted)
+        print(x_scale, y_scale)
+    else:
+        print("Both number groups are vertical.")
+        exit()
+if abs(firstng[0][0][0][1] - firstng[1][0][0][1]) < 7 or abs(firstng[0][0][2][1] - firstng[1][0][2][1]) < 7:
+    if abs(secondng[0][0][0][0] - secondng[1][0][0][0]) < 7 or abs(secondng[0][0][2][0] - secondng[1][0][2][0]) < 7:
+        x_scale = medyanHor(firstsorted)
+        y_scale = medyanVer(secondsorted)
+        print(x_scale, y_scale)
+    else:
+        print("Both number groups are horizontal.")
+        exit()
 
 topcorner = 0
 rightcorner = 100000
@@ -156,20 +196,11 @@ for x in mixed:
     if x[0][1][1] < rightcorner:
         rightcorner = x[0][1][1]
 
-xmid = []
-ymid = []
-for x in firstng:
-    xmid.append(float(x[1]))
-for x in secondng:
-    ymid.append(float(x[1]))
-xmid = medyan(xmid)
-ymid = medyan(ymid)
-
 longlg = lgroups[0]
 for group in lgroups:
     if len(longlg) < len(group):
         longlg = group  
-   
+
 colorboxes = []
 for word in longlg:
     squ = abs(word[0][3][1]-word[0][0][1])
@@ -188,6 +219,9 @@ for word in longlg:
                 sumcolorgreen = sumcolorgreen + colorbox[x][y][1]
                 sumcolorblue = sumcolorblue + colorbox[x][y][2]
                 sumn = sumn + 1
+    if sumn == 0:
+        print("A word invaded legendbox names. Please lower the threshold of OCR grouping function")
+        exit()
     sumcolorred = int(sumcolorred / sumn)
     sumcolorgreen= int(sumcolorgreen / sumn)
     sumcolorblue= int(sumcolorblue / sumn)
@@ -239,7 +273,6 @@ cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
 lines = cv2.HoughLines(hough, 1, np.pi / 180, 500, None)
-print(lines)
 
 if lines is not None:
     for i in range(0, len(lines)):
@@ -369,14 +402,14 @@ for column in columns:
         data.append(point[2])
         cutimg[point[0],point[1]] = [0,0,0]
 
-kgroups = len(longlg)+1
+kmeans_colors_extra = 3
+kgroups = len(longlg) + kmeans_colors_extra
 colorNameAndGroup = []
 predictions = Kmeans.kmeansT(data,kgroups)
 for x in range(len(colorboxes)):
     colorNameAndGroup.append([colorboxes[x][0][1],predictions[x]])
 for x in range(len(points)):
     points[x][3] = predictions[x+len(colorboxes)]
-
 
 for column in columns:
     print('New Column: ')
