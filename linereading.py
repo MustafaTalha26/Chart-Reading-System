@@ -10,7 +10,7 @@ import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/98990.png')
+image = cv2.imread('rawdata/Line/99000.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -41,7 +41,6 @@ def medyanHor(nlist):
 
 def maxVer(nlist,topleft,y_scale):
     mid = len(nlist) // 2
-    print(topleft,nlist[mid-1][0][0][1])
     if len(nlist) % 2 == 1:
         res = float(nlist[mid-1][1]) + y_scale * (topleft - nlist[mid][0][0][1])
     if len(nlist) % 2 == 0:
@@ -54,7 +53,6 @@ def maxHor(nlist,bottomright,x_scale):
     if len(nlist) % 2 == 0:
         res = float(nlist[~mid][1]) + x_scale * (bottomright - nlist[~mid][0][0][0])
     return res
-
 
 # A function for easyocr
 def correctgroups(result):
@@ -174,14 +172,14 @@ for group in ngroups:
     elif len(group) < len(firstng) and len(group) > len(secondng):
         secondng = group
 
-topcorner = 0
-rightcorner = 100000
+bottomrightcorner = 0
+topleftcorner = len(image)
 mixed = firstng + secondng
 for x in mixed:
-    if x[0][1][0] > topcorner:
-        topcorner = x[0][1][0]
-    if x[0][1][1] < rightcorner:
-        rightcorner = x[0][1][1]
+    if x[0][1][0] > bottomrightcorner:
+        bottomrightcorner = x[0][1][0]
+    if x[0][1][1] < topleftcorner:
+        topleftcorner = x[0][1][1]
 
 x_scale = 0
 x_max = 0
@@ -200,8 +198,8 @@ if abs(firstng[0][0][0][0] - firstng[1][0][0][0]) < 7 or abs(firstng[0][0][2][0]
         secondsorted = sort_by_indexes(secondng,secondsorted)
         x_scale = medyanHor(secondsorted)
         y_scale = medyanVer(firstsorted)
-        x_max = maxHor(secondsorted,topcorner,x_scale)
-        y_max = maxVer(firstsorted,rightcorner,y_scale)
+        x_max = maxHor(secondsorted,bottomrightcorner,x_scale)
+        y_max = maxVer(firstsorted,topleftcorner,y_scale)
         print(x_scale, y_scale, x_max, y_max)
     else:
         print("Both number groups are vertical.")
@@ -218,14 +216,12 @@ if abs(firstng[0][0][0][1] - firstng[1][0][0][1]) < 7 or abs(firstng[0][0][2][1]
         secondsorted = sort_by_indexes(secondng,secondsorted)
         x_scale = medyanHor(firstsorted)
         y_scale = medyanVer(secondsorted)
-        x_max = maxHor(firstsorted,topcorner,x_scale)
-        y_max = maxVer(secondsorted,rightcorner,y_scale)
+        x_max = maxHor(firstsorted,bottomrightcorner,x_scale)
+        y_max = maxVer(secondsorted,topleftcorner,y_scale)
         print(x_scale, y_scale, x_max, y_max)
     else:
         print("Both number groups are horizontal.")
         exit()
-
-
 
 longlg = lgroups[0]
 for group in lgroups:
@@ -327,18 +323,19 @@ linesdata = zip(h,q,d)
 
 lineanglethresh = 0.1
 xaxis = [1.570,0]
-yaxis = [0.008,0]
+yaxis = [0.008,len(image)]
 for _,y,z in linesdata:
     print(y,z)
-    if abs(abs(1.570) - abs(y)) < lineanglethresh and z < xaxis[1]:
+    if abs(abs(1.570) - abs(y)) < lineanglethresh and abs(z) > abs(xaxis[1]):
         xaxis[0] = y
         xaxis[1] = z
-    if abs(abs(0.008) - abs(y)) < lineanglethresh and z > yaxis[1]:
+    if abs(abs(0.008) - abs(y)) < lineanglethresh and z < yaxis[1]:
         yaxis[0] = y
         yaxis[1] = z
 
-if xaxis[1] != 0 and yaxis[1] != 0:
-    cutimg = image[rightcorner:int(abs(xaxis[1]))-5, int(yaxis[1])+3:topcorner]
+if xaxis[1] != 0 and yaxis[1] != len(image):
+    print(int(yaxis[1])+5,bottomrightcorner,topleftcorner,int(abs(xaxis[1]))-5)
+    cutimg = image[topleftcorner:int(abs(xaxis[1]))-5, int(yaxis[1])+5:bottomrightcorner]
     erosion_kernel = np.ones((5, 15), np.uint8) 
     cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
@@ -443,12 +440,10 @@ for x in range(len(points)):
     points[x][3] = predictions[x+len(colorboxes)]
 
 for column in columns:
-    #print('New Column: ')
     for point in column:
         for x in colorNameAndGroup:
             if point[3] == x[1]:
-                x[2].append([(point[0]*y_scale),(point[1]*x_scale),point[2]])
-                #print('Data Points: ', point)
+                x[2].append([(y_max+(point[0]*y_scale)-5),(point[1]*x_scale)-5,point[2]])
 
 for x in colorNameAndGroup:
     print(x[0],x[1])
