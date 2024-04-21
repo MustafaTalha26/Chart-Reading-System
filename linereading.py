@@ -10,7 +10,7 @@ import csv
 
 pixel_count = 0
 reader = easyocr.Reader(['en'])
-image = cv2.imread('rawdata/Line/99000.png')
+image = cv2.imread('rawdata/Line/99035.png')
 
 # Necessary Functions
 def checkfloat(string):
@@ -325,7 +325,6 @@ lineanglethresh = 0.1
 xaxis = [1.570,0]
 yaxis = [0.008,len(image)]
 for _,y,z in linesdata:
-    print(y,z)
     if abs(abs(1.570) - abs(y)) < lineanglethresh and abs(z) > abs(xaxis[1]):
         xaxis[0] = y
         xaxis[1] = z
@@ -334,8 +333,7 @@ for _,y,z in linesdata:
         yaxis[1] = z
 
 if xaxis[1] != 0 and yaxis[1] != len(image):
-    print(int(yaxis[1])+5,bottomrightcorner,topleftcorner,int(abs(xaxis[1]))-5)
-    cutimg = image[topleftcorner:int(abs(xaxis[1]))-5, int(yaxis[1])+5:bottomrightcorner]
+    cutimg = image[topleftcorner:int((19*abs(xaxis[1]))/20), int((21*yaxis[1])/20):bottomrightcorner]
     erosion_kernel = np.ones((5, 15), np.uint8) 
     cutimg = cv2.erode(cutimg, erosion_kernel)
     copy = cv2.resize(cutimg, (600, 400))
@@ -443,10 +441,10 @@ for column in columns:
     for point in column:
         for x in colorNameAndGroup:
             if point[3] == x[1]:
-                x[2].append([(y_max+(point[0]*y_scale)-5),(point[1]*x_scale)-5,point[2]])
+                x[2].append([(point[1]*x_scale),(y_max+(point[0]*y_scale))])
 
 for x in colorNameAndGroup:
-    print(x[0],x[1])
+    print(x[0])
     for point in x[2]:
         print(point)        
 
@@ -454,10 +452,9 @@ copy = cv2.resize(cutimg, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
-
-
-
-
-#with open('output.csv', 'w') as file:
-#    csv_writer = csv.writer(file)
-#    csv_writer.writerows(points)
+with open('output.csv', 'w') as file:
+    csv_writer = csv.writer(file)
+    for x in colorNameAndGroup:
+        csv_writer.writerow(x[0])
+        for point in x[2]:
+            csv_writer.writerow(point)  
