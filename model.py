@@ -5,7 +5,7 @@ import tensorflow as tf
 
 def define_model():
     model = keras.models.Sequential()
-    model.add(keras.Input(shape=(200,200,3)))
+    model.add(keras.Input(shape=(224,224,3)))
     model.add(tf.keras.layers.Rescaling(1./255))
     model.add(keras.layers.Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
     model.add(keras.layers.BatchNormalization())
@@ -24,18 +24,18 @@ model = define_model()
 
 seed = 1
 train = keras.utils.image_dataset_from_directory(
-    "newdata/",
+    "rawdata/",
     seed=1,
-    image_size=(200,200),
+    image_size=(224,224),
     batch_size=32,
     validation_split = 0.2,
     subset = "training",
     label_mode='categorical'
 )
 valid = keras.utils.image_dataset_from_directory(
-    "newdata/",
+    "rawdata/",
     seed=1,
-    image_size=(200,200),
+    image_size=(224,224),
     batch_size=32,
     validation_split = 0.2,
     subset = "validation",
@@ -44,7 +44,7 @@ valid = keras.utils.image_dataset_from_directory(
 test = keras.utils.image_dataset_from_directory(
     "testdata/",
     seed=1,
-    image_size=(200,200),
+    image_size=(224,224),
     batch_size=32,
     label_mode='categorical'
 )
@@ -54,7 +54,7 @@ epochs= 10
 model.compile(
     optimizer=keras.optimizers.Adam(1e-6),
     loss="categorical_crossentropy",
-    metrics=["accuracy"],
+    metrics=["accuracy"]
 )
 history = model.fit(
     train,

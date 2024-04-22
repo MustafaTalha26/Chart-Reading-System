@@ -4,7 +4,7 @@ from sklearn.metrics import classification_report
 import tensorflow as tf
 from keras.applications import ResNet101V2
 
-def ResNet101V2_model(learning_rate, input_shape,class_number):
+def ResNet101V2_model(input_shape,class_number):
     baseModel = ResNet101V2(include_top=False, input_tensor=keras.layers.Input(shape=input_shape))
     for layer in baseModel.layers[:-4]:
         layer.trainable = False
@@ -13,17 +13,8 @@ def ResNet101V2_model(learning_rate, input_shape,class_number):
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(128, activation='relu', kernel_initializer='he_uniform'))
     model.add(keras.layers.Dense(32, activation='relu', kernel_initializer='he_uniform'))
-    model.add(keras.layers.Dense(4, activation='softmax'))
+    model.add(keras.layers.Dense(class_number, activation='softmax'))
     return model
-
-lr = 0.0001
-size = (224, 224)
-shape = (224,224, 3) 
-epochs = 5
-class_number = 4
-
-model = ResNet101V2_model(lr,shape,class_number)
-model.compile(loss= "categorical_crossentropy", metrics=["accuracy"], optimizer="adam")
 
 seed = 1
 train = keras.utils.image_dataset_from_directory(
@@ -52,11 +43,25 @@ test = keras.utils.image_dataset_from_directory(
     label_mode='categorical'
 )
 
+lr = 1e-6
+size = (224, 224)
+shape = (224,224, 3) 
+epochs = 10
+class_number = 4
+
+model = ResNet101V2_model(shape,class_number)
+callback = keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+
+model.compile(
+    loss= "categorical_crossentropy", 
+    metrics=["accuracy"], 
+    optimizer=keras.optimizers.Adam(lr)
+)
 history = model.fit(
     train,
     epochs=epochs,
     validation_data=valid,
-    batch_size=32
+    callbacks=[callback]
 )
 
 predictions = np.array([])
