@@ -42,8 +42,15 @@ close = cv2.morphologyEx(eroded, cv2.MORPH_CLOSE, close_kernel, iterations=1)
 dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,3))
 dilate = cv2.dilate(close, dilate_kernel, iterations=1)
 
+<<<<<<< HEAD
+def read_pie_chart(imagepath,language='en'):
+    pixel_count = 0
+    reader = easyocr.Reader([language])
+    image = cv2.imread(imagepath)
+=======
 cnts = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+>>>>>>> parent of 2f0a92f (clearing)
 
 box_list = []
 for c in cnts:
@@ -58,6 +65,39 @@ copy = cv2.resize(image, (600, 400))
 cv2.imshow('Resized_Window', copy)
 cv2.waitKey(0)
 
+<<<<<<< HEAD
+    ngroups,lgroups = correctgroups(result)
+    longlg = lgroups[0]
+    for group in lgroups:
+        if len(longlg) < len(group):
+            longlg = group  
+    colorboxes = []
+    seperateimg = image.copy()
+    for word in longlg:
+        squ = abs(word[0][3][1]-word[0][0][1])
+        colorbox = image[word[0][0][1]:word[0][2][1],word[0][0][0]-int((15*squ)/10):word[0][2][0]-int((15*squ)/10)].copy()
+        cv2.rectangle(seperateimg, (word[0][0][0]-int((15*squ)/10), word[0][0][1]), (word[0][2][0]-int((15*squ)/10), word[0][2][1]), (255,255,255), -1)
+        erosion_kernel = np.ones((5, 15), np.uint8) 
+        colorbox = cv2.erode(colorbox, erosion_kernel)
+        colorbox = cv2.cvtColor(colorbox, cv2.COLOR_RGB2GRAY)
+        sumgray = 0
+        sumn = 0
+        for x in range(len(colorbox)):
+            for y in range(len(colorbox[0])):
+                if (colorbox[x][y] != 255 ):
+                    sumgray = sumgray + colorbox[x][y]
+                    sumn = sumn + 1
+        if sumn == 0:
+            print("A word invaded legendbox names. Please lower the threshold of OCR grouping function")
+            exit()
+        sumgray= int(sumgray / sumn)
+        print(sumgray)
+        colorboxes.append([word,sumgray])
+
+    copy = cv2.resize(image, (600, 400))
+    cv2.imshow('Resized_Window', copy)
+    cv2.waitKey(0)
+=======
 ythresh = 5
 pairs = []
 for box in box_list:
@@ -74,6 +114,7 @@ for box in box_list:
             distance = dist
             cti = textbox
     pairs.append([box,cti,0,0])
+>>>>>>> parent of 2f0a92f (clearing)
 
 gray = cv2.cvtColor(copyimg, cv2.COLOR_RGB2GRAY)
 for pair in pairs:
