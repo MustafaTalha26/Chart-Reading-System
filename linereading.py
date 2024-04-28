@@ -211,7 +211,7 @@ def read_line_graph(image_path,language='en',frequency=30,kmeans_colors_extra = 
     y_max = 0
 
     # These section will choose which numbergroup belongs to X and which to Y axis
-    # Scale variables will be understood
+    # Scale variables will be assigned here
     if abs(firstng[0][0][0][0] - firstng[1][0][0][0]) < 7 or abs(firstng[0][0][2][0] - firstng[1][0][2][0]) < 7:
         if abs(secondng[0][0][0][1] - secondng[1][0][0][1]) < 7 or abs(secondng[0][0][2][1] - secondng[1][0][2][1]) < 7:
             firstsorted = []

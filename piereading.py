@@ -145,8 +145,7 @@ def read_pie_chart(imagepath,language='en'):
             print("A word invaded legendbox names. Please lower the threshold of OCR grouping function")
             exit()
         sumgray= int(sumgray / sumn)
-        print(sumgray)
-        colorboxes.append([word,sumgray])
+        colorboxes.append([word,sumgray,0])
 
     copy = cv2.resize(image, (600, 400))
     cv2.imshow('Resized_Window', copy)
@@ -181,49 +180,13 @@ def read_pie_chart(imagepath,language='en'):
     cv2.imshow('Resized_Window', copy)
     cv2.waitKey(0)
 
-    ythresh = 5
-    pairs = []
-    for box in box_list:
-        boxx = int((2 * box[0] + box[2]) / 2)
-        boxy = int((2 * box[1] + box[3]) / 2)
-        cti = 0
-        distance = 500000
-        for textbox in result:
-            textx = int((textbox[0][0][0] + textbox[0][2][0]) / 2)
-            texty = int((textbox[0][0][1] + textbox[0][2][1]) / 2)
-            dist = math.sqrt(abs(boxx - textx)**2 + abs(boxy - texty)**2)
-            if (dist < distance and abs(boxy - texty) < ythresh and 
-                abs(textbox[0][0][1] - textbox[0][2][1])* 2 > box[3]):
-                distance = dist
-                cti = textbox
-        pairs.append([box,cti,0,0])
-
-    gray = cv2.cvtColor(copyimg, cv2.COLOR_RGB2GRAY)
-    for pair in pairs:
-        hist,bins = np.histogram(gray[(pair[0][1]):(pair[0][1]+pair[0][3]), (pair[0][0]):(pair[0][0]+pair[0][2])].ravel(),256,[0,256])
-        plist = []
-        for a in range(len(hist)):
-            plist.append([a,hist[a]])
-        n = len(plist)
-        for i in range(n):
-            for j in range(n-1):
-                if plist[j][1] > plist[j+1][1]:
-                    plist[j], plist[j+1] = plist[j+1], plist[j]
-        if plist[255][0] != 255:
-            pair[2] = plist[255]
-        print(pair)
-
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    copy = cv2.resize(gray, (600, 400))
-    cv2.imshow('Resized_Window', copy)
-    cv2.waitKey(0)
-
     def condition(x):
         return x != 0
     def condx(x):
-        return x[2] != 0
-    count = sum(condition(x[2]) for x in pairs)
+        return x[1] != 0
+    count = sum(condition(x[1]) for x in colorboxes)
 
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     hist,bins = np.histogram(gray.ravel(),256,[0,256])
     plist = []
     for a in range(len(hist)):
@@ -240,20 +203,20 @@ def read_pie_chart(imagepath,language='en'):
             slicepixels.append(plist[254-x])
     piecount = sum(x[1] for x in slicepixels)
 
-    for pair in pairs:
-        if pair[2] != 0:
+    for pair in colorboxes:
+        if pair[1] != 0:
             dst = 256
             for x in slicepixels:
-                if abs(x[0]-pair[2][0]) < dst:
-                    dst = abs(x[0]-pair[2][0])
-                    pair[3] = x
+                if abs(x[0]-pair[1]) < dst:
+                    dst = abs(x[0]-pair[1])
+                    pair[2] = x
                     chosen = x
             slicepixels.remove(chosen) 
 
-    pairs = list(filter(condx, pairs)) 
+    colorboxes = list(filter(condx, colorboxes)) 
 
     sumnum = 0
-    for pair in pairs:
-        sumnum = sumnum + pair[3][1]
-    for pair in pairs:
-        print(pair[1][1]," = ",(pair[3][1] * 360 / piecount)) 
+    for pair in colorboxes:
+        sumnum = sumnum + pair[2][1]
+    for pair in colorboxes:
+        print(pair[0][1]," = ",(pair[2][1] * 360 / piecount)) 
