@@ -138,7 +138,7 @@ def correctgroups(result):
     return numbergroups,lettergroups
 
 # Function for creating csv file
-def read_line_graph(image_path,language='en',frequency=30,kmeans_colors_extra = 3):
+def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra = 3):
     reader = easyocr.Reader(language)
     image = cv2.imread(image_path)
     
