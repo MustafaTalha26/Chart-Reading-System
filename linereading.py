@@ -58,6 +58,16 @@ def correctgroups(result):
             correctresults.append(x)
     result = correctresults
 
+    for x in result:
+        x[0][0][0] = int(x[0][0][0])
+        x[0][0][1] = int(x[0][0][1])
+        x[0][1][0] = int(x[0][1][0])
+        x[0][1][1] = int(x[0][1][1])
+        x[0][2][0] = int(x[0][2][0])
+        x[0][2][1] = int(x[0][2][1])
+        x[0][3][0] = int(x[0][3][0])
+        x[0][3][1] = int(x[0][3][1])
+
     groups = []
     group = []        
     for chosen in result:
@@ -173,7 +183,7 @@ def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra 
 
     # Number groups and letter groups identifed but needs further selection
     ngroups,lgroups = correctgroups(result)
-
+    
     # We need X and Y axis numbers to read chart
     # Number groups can't be less
     if len(ngroups) < 2:
@@ -190,7 +200,10 @@ def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra 
             firstng = group
         elif len(group) < len(firstng) and len(group) > len(secondng):
             secondng = group
-
+    for x in firstng:
+        print(x)
+    for x in secondng:
+        print(x)
     # For identifying chart boundries
     # Only bottomright and topleft numbers taken
     # Other numbers will be provided from hough line transformation
@@ -255,7 +268,8 @@ def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra 
     for group in lgroups:
         if len(longlg) < len(group):
             longlg = group  
-
+    for x in longlg:
+        print(x)
     # Colors are nearby letters
     # We identify these colors with mean values of colorbox
     # Word and its color are ready for further use

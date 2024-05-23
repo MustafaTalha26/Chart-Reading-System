@@ -187,6 +187,9 @@ def read_pie_chart(imagepath,language='en'):
     count = sum(condition(x[1]) for x in colorboxes)
 
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    copy = cv2.resize(gray, (600, 400))
+    cv2.imshow('Resized_Window', copy)
+    cv2.waitKey(0)
     hist,bins = np.histogram(gray.ravel(),256,[0,256])
     plist = []
     for a in range(len(hist)):
