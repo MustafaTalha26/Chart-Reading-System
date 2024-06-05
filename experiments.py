@@ -5,6 +5,7 @@ import seaborn as sns
 from sklearn import metrics
 import tensorflow as tf
 from matplotlib import pyplot as plt
+import models
 
 # Definition and attributes of the model
 def define_model():
@@ -29,16 +30,16 @@ def define_model():
     #print(model.summary())
     return model
 
-dataset_path = "graydata/"
+dataset_path = "rawdata/"
 # Training function of the model
 # Model and weights will be saved for further use
 def train_model():
-    model = define_model()
+    model = models.Xception_model()
     train = keras.utils.image_dataset_from_directory(
         dataset_path,
         seed=1,
         image_size=(224,224),
-        batch_size=32,
+        batch_size=16,
         validation_split = 0.2,
         subset = "training",
         label_mode='categorical'
@@ -47,7 +48,7 @@ def train_model():
         dataset_path,
         seed=1,
         image_size=(224,224),
-        batch_size=32,
+        batch_size=16,
         validation_split = 0.2,
         subset = "validation",
         label_mode='categorical'
@@ -79,13 +80,13 @@ def train_model():
 
 # for testing testdata/ file
 def test_model():
-    model = define_model()
+    model = models.Xception_model()
     model.load_weights('test_model_w.h5')
     test = keras.utils.image_dataset_from_directory(
-        "graytest/",
+        "testdata/",
         seed=1,
         image_size=(224,224),
-        batch_size=32,
+        batch_size=16,
         label_mode='categorical'
     )
     predictions = np.array([])
@@ -106,7 +107,6 @@ def test_model():
     plt.title('Confusion Matrix',fontsize=17)
     plt.show()
     
-
 # Predict single chart
 # Return index number
 def predict_chart(imagepath):
