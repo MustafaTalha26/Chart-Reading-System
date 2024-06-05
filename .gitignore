@@ -4,3 +4,8 @@ rawdata/
 LineTest/
 testdata/
 my_model/
+graydata/
+graytest/
+cleandata/
+cleantest/
+test_model_w.h5
