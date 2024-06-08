@@ -122,5 +122,3 @@ def predict_chart(imagepath):
     print(class_labels[predicted_class_index],"Chart")
     return predicted_class_index
 
-train_model()
-test_model()

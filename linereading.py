@@ -444,8 +444,13 @@ def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra 
     clump = []
     clumps = []
     clumpflag = 0
+    showimg = cutimg.copy()
     for column in range(frequency):
         pillar = int(len(cutimg[0])/frequency) * column
+        for x in range(len(showimg[:,pillar])):
+                showimg[:,pillar][x][0] = 255
+                showimg[:,pillar][x][1] = 0
+                showimg[:,pillar][x][2] = 0
         for x in range(len(cutimg[:,pillar])):
             if True != (cutimg[:,pillar][x][0] == 255 and cutimg[:,pillar][x][1] == 255 and cutimg[:,pillar][x][2] == 255) :
                 clump.append([x,[cutimg[:,pillar][x][0],cutimg[:,pillar][x][1],cutimg[:,pillar][x][2]],pillar])
@@ -456,6 +461,10 @@ def read_line_graph(image_path,language=['en'],frequency=30,kmeans_colors_extra 
                 clump = []
         accur.append(clumps)
         clumps = []
+
+    copy = cv2.resize(showimg, (600, 400))
+    cv2.imshow('Resized_Window', copy)
+    cv2.waitKey(0)
 
     # After points extracted new data structure created as listed:
     # Y cord of image, X cord of image, RGB colors, group number
